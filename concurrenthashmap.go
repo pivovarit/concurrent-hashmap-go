@@ -8,6 +8,23 @@ type HashMap[K comparable, V any] struct {
 	initialCapacity  uint
 	loadFactor       float32
 	concurrencyLevel uint
+
+	/*
+	 * The array of bins. Lazily initialized upon first insertion.
+	 * Size is always a power of two. Accessed directly by iterators.
+	 */
+	table *node[K, V] // TODO ensure volatile semantics
+	/*
+	 * The next table to use; non-null only while resizing.
+	 */
+	nextTable *node[K, V] // TODO ensure volatile semantics
+}
+
+type node[K comparable, V any] struct {
+	// TODO hash int
+	// TODO key  K
+	// TODO val  V
+	// TODO next *node[K, V]
 }
 
 type Entry[K any, V any] struct {
@@ -32,6 +49,8 @@ func NewWithConcurrencyLevel[K comparable, V any](capacity uint, loadFactor floa
 		concurrencyLevel: concurrencyLevel,
 		initialCapacity:  capacity,
 		loadFactor:       loadFactor,
+		table:            nil,
+		nextTable:        nil,
 	}
 }
 
