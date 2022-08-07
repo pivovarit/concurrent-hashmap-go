@@ -4,6 +4,12 @@ const defaultCapacity = 16
 const defaultLoadFactor = 0.75
 const defaultConcurrencyLevel = 1
 
+// treeify
+
+const treeifyThreshold = 8
+const untreeifyThreshold = 6
+const minTreeifyCapacity = 64
+
 type HashMap[K comparable, V any] struct {
 }
 
