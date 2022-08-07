@@ -25,3 +25,18 @@ jobs:
 
       - name: Run unit tests
         run: go test ./...
+
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@v0.3.3
+
+      - name: Verify 'go fmt'
+        working-directory: ${{ inputs.service-name }}
+        run: test -z $(gofmt -l .) || (echo "run go fmt ./... on your changes" && exit 1)
+
+      - name: Run 'go vet'
+        working-directory: ${{ inputs.service-name }}
+        run: go vet ./...
+
+      - name: Run 'staticcheck'
+        working-directory: ${{ inputs.service-name }}
+        run: staticcheck ./...

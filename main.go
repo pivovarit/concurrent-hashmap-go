@@ -1,5 +1,0 @@
-package concurrent
-
-func main() {
-
-}
