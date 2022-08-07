@@ -10,6 +10,11 @@ type HashMap[K comparable, V any] struct {
 	concurrencyLevel uint
 }
 
+type Entry[K any, V any] struct {
+	Key   K
+	Value V
+}
+
 func New[K comparable, V any]() HashMap[K, V] {
 	return NewWithInitialSize[K, V](defaultCapacity)
 }
@@ -28,4 +33,80 @@ func NewWithConcurrencyLevel[K comparable, V any](capacity uint, loadFactor floa
 		initialCapacity:  capacity,
 		loadFactor:       loadFactor,
 	}
+}
+
+func (receiver *HashMap[K, V]) Size() uint {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) IsEmpty() bool {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) ContainsKey(key K) bool {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) ContainsValue(value V) bool {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) Put(key K, value V) V {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) Remove(key K) V {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) RemoveEntry(key K, value V) V {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) Replace(key K, value V) V {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) PutAll(hashMap HashMap[K, V]) {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) Clear() {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) KeySet() []K {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) ValueSet() []V {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) EntrySet() []Entry[K, V] {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) PutIfAbsent(key K, value V) V {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) ReplaceAll(function func(K, V) V) {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) ComputeIfAbsent(key K, function func(K) V) V {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) ComputeIfPresent(key K, remappingFunction func(K, V) V) V {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) Compute(key K, remappingFunction func(K, V) V) V {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) Merge(key K, value V, remappingFunction func(K, V) V) V {
+	panic("TODO") // TODO
 }
