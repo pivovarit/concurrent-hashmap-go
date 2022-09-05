@@ -4,6 +4,8 @@ const defaultCapacity = 16
 const defaultLoadFactor = 0.75
 const defaultConcurrencyLevel = 1
 
+const hashBits int = 0x7fffffff // usable bits of normal node hash
+
 type HashMap[K comparable, V any] struct {
 	initialCapacity  uint
 	loadFactor       float32
@@ -14,17 +16,64 @@ type HashMap[K comparable, V any] struct {
 	 * Size is always a power of two. Accessed directly by iterators.
 	 */
 	table *node[K, V] // TODO ensure volatile semantics
+
 	/*
 	 * The next table to use; non-null only while resizing.
 	 */
 	nextTable *node[K, V] // TODO ensure volatile semantics
+
+	/*
+	 * Base counter value, used mainly when there is no contention,
+	 * but also as a fallback during table initialization
+	 * races. Updated via CAS.
+	 */
+	baseCount int64
+
+	/*
+	 * Table initialization and resizing control.  When negative, the
+	 * table is being initialized or resized: -1 for initialization,
+	 * else -(1 + the number of active resizing threads).  Otherwise,
+	 * when table is null, holds the initial table size to use upon
+	 * creation, or 0 for default. After initialization, holds the
+	 * next element count value upon which to resize the table.
+	 */
+	sizeCtl int
+
+	/*
+	 * The next table index (plus one) to split while resizing.
+	 */
+	transferIndex int
+
+	/*
+	 * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
+	 */
+	cellsBusy int
 }
 
 type node[K comparable, V any] struct {
-	// TODO hash int
-	// TODO key  K
-	// TODO val  V
-	// TODO next *node[K, V]
+	hash int
+	key  K
+	val  V
+	next *node[K, V]
+}
+
+func (r *node[K, V]) find(hash int, key *K) *node[K, V] {
+	if key == nil {
+		return nil
+	}
+	current := r
+	if current.hash == hash && current.key == *key {
+		return current
+	}
+
+	for current.next != nil {
+		current = current.next
+		if current.hash == hash && current.key == *key {
+			return current
+		}
+	}
+
+	return nil
 }
 
 type Entry[K any, V any] struct {
