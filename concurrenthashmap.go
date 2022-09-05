@@ -21,10 +21,10 @@ type HashMap[K comparable, V any] struct {
 }
 
 type node[K comparable, V any] struct {
-	// TODO hash int
-	// TODO key  K
-	// TODO val  V
-	// TODO next *node[K, V]
+	hash int
+	key  K
+	val  V
+	next *node[K, V]
 }
 
 type Entry[K any, V any] struct {
