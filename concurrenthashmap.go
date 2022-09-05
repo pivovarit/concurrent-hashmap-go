@@ -28,6 +28,26 @@ type HashMap[K comparable, V any] struct {
 	 * races. Updated via CAS.
 	 */
 	baseCount int64
+
+	/*
+	 * Table initialization and resizing control.  When negative, the
+	 * table is being initialized or resized: -1 for initialization,
+	 * else -(1 + the number of active resizing threads).  Otherwise,
+	 * when table is null, holds the initial table size to use upon
+	 * creation, or 0 for default. After initialization, holds the
+	 * next element count value upon which to resize the table.
+	 */
+	sizeCtl int
+
+	/*
+	 * The next table index (plus one) to split while resizing.
+	 */
+	transferIndex int
+
+	/*
+	 * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
+	 */
+	cellsBusy int
 }
 
 type node[K comparable, V any] struct {
