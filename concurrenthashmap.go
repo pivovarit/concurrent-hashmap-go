@@ -16,10 +16,18 @@ type HashMap[K comparable, V any] struct {
 	 * Size is always a power of two. Accessed directly by iterators.
 	 */
 	table *node[K, V] // TODO ensure volatile semantics
+
 	/*
 	 * The next table to use; non-null only while resizing.
 	 */
 	nextTable *node[K, V] // TODO ensure volatile semantics
+
+	/*
+	 * Base counter value, used mainly when there is no contention,
+	 * but also as a fallback during table initialization
+	 * races. Updated via CAS.
+	 */
+	baseCount int64
 }
 
 type node[K comparable, V any] struct {
