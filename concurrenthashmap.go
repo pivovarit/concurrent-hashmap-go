@@ -4,6 +4,8 @@ const defaultCapacity = 16
 const defaultLoadFactor = 0.75
 const defaultConcurrencyLevel = 1
 
+const hashBits int = 0x7fffffff // usable bits of normal node hash
+
 type HashMap[K comparable, V any] struct {
 	initialCapacity  uint
 	loadFactor       float32
@@ -25,6 +27,25 @@ type node[K comparable, V any] struct {
 	key  K
 	val  V
 	next *node[K, V]
+}
+
+func (r *node[K, V]) find(hash int, key *K) *node[K, V] {
+	if key == nil {
+		return nil
+	}
+	current := r
+	if current.hash == hash && current.key == *key {
+		return current
+	}
+
+	for current.next != nil {
+		current = current.next
+		if current.hash == hash && current.key == *key {
+			return current
+		}
+	}
+
+	return nil
 }
 
 type Entry[K any, V any] struct {
