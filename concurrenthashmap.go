@@ -14,22 +14,50 @@ type HashMap[K comparable, V any] struct {
 	 * Size is always a power of two. Accessed directly by iterators.
 	 */
 	table *node[K, V] // TODO ensure volatile semantics
+
 	/*
 	 * The next table to use; non-null only while resizing.
 	 */
 	nextTable *node[K, V] // TODO ensure volatile semantics
-}
 
-type node[K comparable, V any] struct {
-	// TODO hash int
-	// TODO key  K
-	// TODO val  V
-	// TODO next *node[K, V]
-}
+	/*
+	 * Base counter value, used mainly when there is no contention,
+	 * but also as a fallback during table initialization
+	 * races. Updated via CAS.
+	 */
+	baseCount int64
 
-type Entry[K any, V any] struct {
-	Key   K
-	Value V
+	/*
+	 * Table initialization and resizing control.  When negative, the
+	 * table is being initialized or resized: -1 for initialization,
+	 * else -(1 + the number of active resizing threads).  Otherwise,
+	 * when table is null, holds the initial table size to use upon
+	 * creation, or 0 for default. After initialization, holds the
+	 * next element count value upon which to resize the table.
+	 */
+	sizeCtl int
+
+	/*
+	 * The next table index (plus one) to split while resizing.
+	 */
+	transferIndex int
+
+	/*
+	 * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
+	 */
+	cellsBusy int
+
+	/*
+	 * Table of counter cells. When non-null, size is a power of 2.
+	 */
+	counterCells []counterCell
+
+	/*
+		// views
+		private transient KeySetView<K,V> keySet;
+		private transient ValuesView<K,V> values;
+		private transient EntrySetView<K,V> entrySet;
+	*/
 }
 
 func New[K comparable, V any]() HashMap[K, V] {
@@ -44,6 +72,37 @@ func NewWithLoadFactor[K comparable, V any](capacity uint, loadFactor float32) H
 	return NewWithConcurrencyLevel[K, V](capacity, loadFactor, defaultConcurrencyLevel)
 }
 
+type node[K comparable, V any] struct {
+	hash int
+	key  K
+	val  V
+	next *node[K, V]
+}
+
+func (r *node[K, V]) find(hash int, key *K) *node[K, V] {
+	if key == nil {
+		return nil
+	}
+	current := r
+	if current.hash == hash && current.key == *key {
+		return current
+	}
+
+	for current.next != nil {
+		current = current.next
+		if current.hash == hash && current.key == *key {
+			return current
+		}
+	}
+
+	return nil
+}
+
+type Entry[K any, V any] struct {
+	Key   K
+	Value V
+}
+
 func NewWithConcurrencyLevel[K comparable, V any](capacity uint, loadFactor float32, concurrencyLevel uint) HashMap[K, V] {
 	return HashMap[K, V]{
 		concurrencyLevel: concurrencyLevel,
@@ -54,12 +113,31 @@ func NewWithConcurrencyLevel[K comparable, V any](capacity uint, loadFactor floa
 	}
 }
 
-func (receiver *HashMap[K, V]) Size() uint {
-	panic("TODO") // TODO
+type counterCell struct {
+	int64 // TODO ensure volatile
+}
+
+func (receiver *HashMap[K, V]) sumCount() int64 {
+	cs := receiver.counterCells
+	var sum = receiver.baseCount
+	if cs != nil {
+		for _, c := range cs {
+			sum = sum + c.int64
+		}
+	}
+	return sum
+}
+
+func (receiver *HashMap[K, V]) Size() int64 {
+	n := receiver.sumCount()
+	if n < 0 {
+		return 0
+	}
+	return n
 }
 
 func (receiver *HashMap[K, V]) IsEmpty() bool {
-	panic("TODO") // TODO
+	return receiver.sumCount() <= 0
 }
 
 func (receiver *HashMap[K, V]) ContainsKey(key K) bool {
@@ -68,6 +146,19 @@ func (receiver *HashMap[K, V]) ContainsKey(key K) bool {
 
 func (receiver *HashMap[K, V]) ContainsValue(value V) bool {
 	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) Get(key K) V {
+	panic("TODO") // TODO
+}
+
+func (receiver *HashMap[K, V]) GetOrDefault(key K, defaultValue V) V {
+	v := receiver.Get(key)
+	if v != nil {
+		return defaultValue
+	}
+
+	return v
 }
 
 func (receiver *HashMap[K, V]) Put(key K, value V) V {
